@@ -8,8 +8,8 @@
 #define _DUTY_MIN 550 // servo full clockwise position (0 degree)
 #define _DUTY_NEU 1475 // servo neutral position (90 degree)
 #define _DUTY_MAX 2400 // servo full counterclockwise position (180 degree)
-
-float former_reading, alpha;
+#define _DIST_ALPHA 0.7
+float former_reading, alpha, dist_ema;
 Servo myservo;
 int a, b; // unit: mm
 
@@ -20,6 +20,7 @@ void setup() {
   myservo.attach(PIN_SERVO); 
   alpha = _DIST_ALPHA;
   former_reading = 0;
+  alpha = _DIST_ALPHA;
   
 // initialize serial port
   Serial.begin(57600);
@@ -42,9 +43,12 @@ void loop() {
   if (former_reading > raw_dist+former_reading*(0.15)) {
     raw_dist = former_reading;
   }
-  float dist_cali = 100 + 300.0 / (b - a) * (raw_dist - a);
+  dist_ema = dist_ema * (1-alpha) + raw_dist * alpha;
+  float dist_cali = 100 + 300.0 / (b - a) * (dist_ema - a);
   Serial.print("min:0,max:500,dist:");
   Serial.print(raw_dist);
+  Serial.print(",dist_ema:");
+  Serial.print(dist_ema);
   Serial.print(",dist_cali:");
   Serial.println(dist_cali);
   if(dist_cali > 255) {
